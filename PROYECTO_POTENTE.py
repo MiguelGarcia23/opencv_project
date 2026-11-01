@@ -1,12 +1,32 @@
 import cv2
 import os
+import json
+
+# =================================================================================
+# CARGA DE JSON
+# =================================================================================
+archivo_json = './utils/barcelona.json'
+
+try:
+    with open(archivo_json, 'r', encoding='utf-8') as f:
+        datos_equipo = json.load(f)
+except FileNotFoundError:
+    print(f"Error: No se ha encontrado el archivo {archivo_json}")
+    datos_equipo = {}
+
+# Transformamos el diccionario para poder buscar directamente por el nombre
+buscador_jugadores = {}
+for dorsal, info in datos_equipo.items():
+    info_completa = info.copy()
+    info_completa["dorsal"] = dorsal
+    buscador_jugadores[info["nombre"].lower()] = info_completa
 
 # =================================================================================
 # CONFIGURACIÓN INICIAL
 # =================================================================================
 archivo_foto_equipo = './imagenes/caras/dorsales.webp'  # Foto del equipo
 carpeta_fotos = './imagenes/caras_prueba/'        # Carpeta donde se guardarán las caras de los jugadores
-archivo_video = './videos/video_lamine.mp4'
+archivo_video = './videos/barcelona.mp4'
 
 # Crear la carpeta si no existe
 if not os.path.exists(carpeta_fotos):
@@ -32,7 +52,10 @@ if img_equipo is not None:
     caras_en_foto = clasificador.detectMultiScale(img_equipo_byn, scaleFactor=1.1, minNeighbors=5)
     
     print(f"Se han detectado {len(caras_en_foto)} caras en la foto de equipo.")
-    
+
+    # 1. Creamos un diccionario temporal con los jugadores que faltan por asignar
+    jugadores_disponibles = {dorsal: info["nombre"] for dorsal, info in datos_equipo.items()}
+        
     for (x, y, ancho, alto) in caras_en_foto:
         
         # 1. Recortamos la cara para mostrarla y guardarla
@@ -43,21 +66,41 @@ if img_equipo is not None:
         cara_ampliada = cv2.resize(cara_recortada_color, (200, 200))
         cv2.imshow('Registro - ¿Quién es?', cara_ampliada)
         cv2.waitKey(1)
-        
-        # 3. Pedimos el nombre por consola
-        nombre = input("Escribe el nombre del jugador (o presiona ENTER para ignorar): ")
-        
-        # 4. Si se ha escrito algo, se estandariza y se guarda en disco y memoria
-        if nombre.strip() != "":
-            cara_estandar = cv2.resize(cara_recortada_byn, (100, 100))
-            ruta_guardado = carpeta_fotos + nombre + ".jpg"
+
+        # 2. Bucle de validación: se repite hasta que el usuario meta una opción correcta
+        while True:
+            print("\n--- JUGADORES SIN IDENTIFICAR ---")
+            # Imprimimos la lista actualizada
+            for dorsal_disp, nombre_disp in jugadores_disponibles.items():
+                print(f"{dorsal_disp}. {nombre_disp}")
+
+            seleccion = input("\nEscribe el NÚMERO del jugador (o presiona ENTER para ignorar): ").strip()
+                        
+            if seleccion == "":
+                print("Cara ignorada.")
+                break # Sale del bucle de validación y pasa a la siguiente cara
+
+            elif seleccion in jugadores_disponibles:
+                # 3. Si acierta el número, sacamos el nombre exacto del JSON
+                nombre_exacto = jugadores_disponibles[seleccion]
+
+                cara_estandar = cv2.resize(cara_recortada_byn, (100, 100))
+                ruta_guardado = os.path.join(carpeta_fotos, nombre_exacto + ".jpg")
+                cv2.imwrite(ruta_guardado, cara_estandar)
+
+                # La metemos directamente en las listas para usarlas ahora en el video
+                nombres_plantilla.append(nombre_exacto)
+                caras_plantilla.append(cara_estandar)
+                print(f"--> ¡{nombre_exacto} guardado correctamente!")
+
+                # 4. Lo borramos de la lista de disponibles para que no vuelva a salir
+                del jugadores_disponibles[seleccion]
+                break # Sale del bucle de validación y pasa a la siguiente cara
             
-            cv2.imwrite(ruta_guardado, cara_estandar)
-            
-            # La metemos directamente en las listas para usarlas ahora en el video
-            nombres_plantilla.append(nombre)
-            caras_plantilla.append(cara_estandar)
-            print(f"--> ¡{nombre} guardado correctamente!")
+
+            else:
+                # Si mete una letra o un número que no está en la lista
+                print("ERROR: Número no válido o jugador ya asignado. Inténtalo de nuevo.")
             
     cv2.destroyWindow('Registro - ¿Quién es?')
 else:
@@ -114,9 +157,43 @@ if len(nombres_plantilla) > 0:
                 if min_val < mejor_diferencia:
                     mejor_diferencia = min_val
                     mejor_nombre = nombres_plantilla[indice]
-                    
+
+            # =================================================================================
+            # TARJETA DE ESTADÍSTICAS
+            # =================================================================================
             cv2.rectangle(frame, (x, y), (x+a_cara, y+h_cara), color_marco, grosor)
-            cv2.putText(frame, mejor_nombre, (x, y-10), fuente, 1, color_marco, grosor)
+
+            datos = buscador_jugadores.get(mejor_nombre.lower())
+
+            if datos:
+                # Coordenada derecha de la cara para pegar ahí la tarjeta
+                lado_derecho = x + a_cara
+                
+                ancho_tarjeta = 230
+                alto_tarjeta = 110 if "nota" not in datos else 130
+                
+                # Fondo gris y borde
+                cv2.rectangle(frame, (lado_derecho, y), (lado_derecho + ancho_tarjeta, y + alto_tarjeta), (40, 40, 40), cv2.FILLED)
+                cv2.rectangle(frame, (lado_derecho, y), (lado_derecho + ancho_tarjeta, y + alto_tarjeta), color_marco, 1)
+                
+                # Textos
+                lineas_texto = [
+                    f"#{datos['dorsal']} {datos['nombre']}",
+                    f"Posicion: {datos['posicion']}",
+                    f"Nacionalidad: {datos['nacionalidad']}",
+                    f"Edad: {datos['edad']} anos"
+                ]
+                if "nota" in datos:
+                    lineas_texto.append(f"*** {datos['nota']} ***")
+                    
+                # Escribimos las líneas
+                y_texto = y + 25
+                for linea in lineas_texto:
+                    cv2.putText(frame, linea, (lado_derecho + 10, y_texto), fuente, 0.5, (255, 255, 255), 1)
+                    y_texto += 20
+            else:
+                # Fallback por si acaso no encuentra el nombre (solo dibuja el nombre arriba)
+                cv2.putText(frame, mejor_nombre, (x, y-10), fuente, 1, color_marco, grosor)
             
         cv2.imshow('Video', frame)
         
