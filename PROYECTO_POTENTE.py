@@ -34,9 +34,15 @@ if not os.path.exists(carpeta_fotos):
 
 clasificador = cv2.CascadeClassifier('./haarcascades/haarcascade_frontalface_default.xml')
 
+# Comprobamos que el detector de caras se ha cargado bien
+if clasificador.empty():
+    print("ERROR: no se pudo cargar el detector de caras (revisa la carpeta haarcascades).")
+    exit()
+
 color_marco = (0, 255, 0) # Marco verde
 grosor = 2
 fuente = cv2.FONT_HERSHEY_SIMPLEX
+UMBRAL = 0.3 # Diferencia máxima para aceptar un nombre (0 = idénticas). Si se supera, "Desconocido"
 
 nombres_plantilla = []
 caras_plantilla = []
@@ -85,6 +91,7 @@ if img_equipo is not None:
                 nombre_exacto = jugadores_disponibles[seleccion]
 
                 cara_estandar = cv2.resize(cara_recortada_byn, (100, 100))
+                cara_estandar = cv2.equalizeHist(cara_estandar) # Igualamos el contraste para que la luz influya menos
                 ruta_guardado = os.path.join(carpeta_fotos, nombre_exacto + ".jpg")
                 cv2.imwrite(ruta_guardado, cara_estandar)
 
@@ -143,6 +150,7 @@ if len(nombres_plantilla) > 0:
             # Recorte y estandarización
             cara_vid_recortada = frame_byn[y:y+h_cara, x:x+a_cara]
             cara_vid_estandar = cv2.resize(cara_vid_recortada, (100, 100))
+            cara_vid_estandar = cv2.equalizeHist(cara_vid_estandar) # Mismo tratamiento que en el registro
             
             mejor_diferencia = 1.0 
             mejor_nombre = nombres_plantilla[0]
@@ -158,6 +166,13 @@ if len(nombres_plantilla) > 0:
                     mejor_diferencia = min_val
                     mejor_nombre = nombres_plantilla[indice]
 
+            # Si la diferencia es demasiado grande, no se parece a nadie
+            if mejor_diferencia > UMBRAL:
+                mejor_nombre = "Desconocido"
+
+            # Mostramos la diferencia debajo de la cara (amarillo) para ajustar el UMBRAL
+            cv2.putText(frame, f"{mejor_diferencia:.2f}", (x, y + h_cara + 25), fuente, 0.8, (0, 255, 255), 2)
+
             # =================================================================================
             # TARJETA DE ESTADÍSTICAS
             # =================================================================================
@@ -171,6 +186,10 @@ if len(nombres_plantilla) > 0:
                 
                 ancho_tarjeta = 230
                 alto_tarjeta = 110 if "nota" not in datos else 130
+
+                # Si la tarjeta no cabe a la derecha, la ponemos a la izquierda de la cara
+                if lado_derecho + ancho_tarjeta > frame.shape[1]:
+                    lado_derecho = max(0, x - ancho_tarjeta)
                 
                 # Fondo gris y borde
                 cv2.rectangle(frame, (lado_derecho, y), (lado_derecho + ancho_tarjeta, y + alto_tarjeta), (40, 40, 40), cv2.FILLED)
