@@ -6,7 +6,7 @@ import os
 # =================================================================================
 archivo_foto_equipo = './imagenes/caras/dorsales.webp'  # Foto del equipo
 carpeta_fotos = './imagenes/caras_prueba/'        # Carpeta donde se guardarán las caras de los jugadores
-archivo_video = './videos/video_lamine.mp4'
+archivo_video = './videos/video_lamine.mp4'     # Video a procesar
 
 # Crear la carpeta si no existe
 if not os.path.exists(carpeta_fotos):
