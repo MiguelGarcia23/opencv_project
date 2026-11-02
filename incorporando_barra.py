@@ -26,9 +26,9 @@ for dorsal, info in datos_equipo.items():
 # =================================================================================
 # CONFIGURACIÓN INICIAL
 # =================================================================================
-archivo_foto_equipo = './imagenes/caras/squad_b.jpg'
-carpeta_fotos = './imagenes/caras_prueba/'
-archivo_video = './videos/video_lamine.mp4'
+archivo_foto_equipo = './imagenes/fotos_equipos/dorsales.webp'
+carpeta_fotos = './imagenes/caras/'
+archivo_video = './videos/barcelona.mp4'
 
 if not os.path.exists(carpeta_fotos):
     os.makedirs(carpeta_fotos)

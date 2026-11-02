@@ -42,7 +42,7 @@ fuente = cv2.FONT_HERSHEY_SIMPLEX
 ANCHO_DE_LA_IMAGEN_PROCESADA = 480          # Ancho en píxeles de la imagen del jugador que analiza la IA. (Menos = más rápido)
 NUMERO_FRAMES_ANALIZADOS_JUNTOS = 3         # La IA analiza 1 de cada N fotogramas. (Más = más rápido)
 NUMERO_FRAMES_ANALIZADOS_BARRA = 10         # La barra de tiempo se actualiza 1 de cada N fotogramas
-NOMBRE_VENTANA = 'Reconocimiento de jugadores - Version final'
+NOMBRE_VENTANA = 'Reconocimiento de jugadores - Version con face_recognition'
 
 # =================================================================================
 # FASE 1: IDENTIFICACIÓN DE JUGADORES
@@ -66,7 +66,7 @@ if img_equipo is not None:
         cara_recortada = img_equipo[top:bottom, left:right]
         cara_ampliada = cv2.resize(cara_recortada, (200, 200))
 
-        cv2.imshow('Registro - Quien es?', cara_ampliada)
+        cv2.imshow('Registro - ¿Quién es?', cara_ampliada)
         cv2.waitKey(1)
 
         # Bucle de validación para identificar jugadores. Se repite hasta que el usuario seleccione una opción correcta
@@ -98,7 +98,7 @@ if img_equipo is not None:
                 # Si mete una letra o un número que no está en la lista
                 print("ERROR: Número no válido o jugador ya asignado. Inténtalo de nuevo.")
 
-    cv2.destroyWindow('Registro - Quien es?')
+    cv2.destroyWindow('Registro - ¿Quién es?')
 else:
     print("No se encontró la foto del equipo.")
 
@@ -255,7 +255,7 @@ if len(nombres_conocidos) > 0:
                         f"Edad: {datos['edad']} años"
                     ]
                     if "nota" in datos:
-                        lineas_texto.append(f"*** {datos['nota']} ***")
+                        lineas_texto.append(f"{datos['nota']} ©")
 
                     # 4. Escribimos cada línea de información en la tarjeta
                     y_texto = top + 25
