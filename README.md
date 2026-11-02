@@ -90,8 +90,9 @@ Como se ve, se puede añadir un campo opcional `"nota"`, que aparece como una l�
 
 | Variable | Valor | Qué controla |
 |---|---|---|
-| `archivo_video` | `./videos/barcelona.mp4` | Vídeo que se analiza |
-| `archivo_foto_equipo` | `./imagenes/fotos_equipos/dorsales.webp` | Foto de la que se sacan las caras para el registro |
+| `foto_equipo` | `./imagenes/fotos_equipos/dorsales.webp` | Foto de la que se sacan las caras para el registro |
+| `video_partido` | `./videos/barcelona.mp4` | Vídeo que se analiza |
+| `archivo_json` | `./utils/barcelona.json` | JSON que se usa para la info del equipo |
 | `UMBRAL` | `0.3` | Diferencia máxima para aceptar un nombre. Si se supera, sale "Desconocido" |
 | `escala` | `0.5` | Cuánto se reduce el vídeo antes de buscar caras (más pequeño = más rápido, pero pierde caras pequeñas) |
 | `minNeighbors` | `5` | Lo exigente que es el detector (más alto = menos caras falsas) |
