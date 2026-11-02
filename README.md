@@ -1,6 +1,6 @@
 # ⚽ Reconocimiento de jugadores — Versión 2 (con librerías)
 
-Segunda versión del proyecto de **Imagen Digital** (Ingeniería Informática en Ingeniería del Software, UEx).
+Segunda versión del proyecto de **Imagen Digital** (Ingeniería Informática en Ingeniería del Software, Universidad de Extremadura).
 
 El objetivo es el mismo que en la versión 1: ayudar a los aficionados que no distinguen a los jugadores mostrando una **tarjeta de información** junto a cada jugador en el vídeo del partido.
 
@@ -8,15 +8,18 @@ La diferencia es **cómo se reconoce a cada jugador**: la versión 1 usa solo lo
 
 ---
 
-## 📁 Archivo
+## 📁 Estructura del proyecto
 
-| Archivo | Descripción |
-|---|---|
-| `proyecto_opencv_version_2.py` | Programa completo de la versión 2 |
-| `utils/barcelona.json` | Datos de los jugadores (nombre, posición, nacionalidad, edad, nota) |
-| `imagenes/caras/dorsales.webp` | Foto de registro de los jugadores |
-| `imagenes/caras_prueba/` | Caras que se guardan al registrar |
-| `videos/barcelona.mp4` | Vídeo de la demo |
+```
+Proyecto OpenCV/
+├── imagenes/
+│   ├── caras_proyecto/        # Primeros planos de los jugadores de pruebas
+│   ├── fotos_equipos/         # Fotos de registro
+│   └── caras/          # Caras que guarda el programa al registrar (se crea sola)
+├── utils/                     # Datos de los jugadores en JSON
+├── videos/                    # Vídeos de prueba (barcelona.mp4, partido.mp4...)
+└── proyecto_opencv_version_2.py        # Programa principal
+```
 
 ---
 
