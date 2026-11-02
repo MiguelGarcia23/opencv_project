@@ -214,7 +214,7 @@ if len(nombres_plantilla) > 0:
                 # Fallback por si acaso no encuentra el nombre (solo dibuja el nombre arriba)
                 cv2.putText(frame, mejor_nombre, (x, y-10), fuente, 1, color_marco, grosor)
             
-        cv2.imshow('Video', frame)
+        cv2.imshow('Reconocimiento de jugadores - Version OpenCV', frame)
         
         if cv2.waitKey(1) == ord('q'):
             break
