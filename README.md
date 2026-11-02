@@ -21,15 +21,15 @@ En pocas palabras: **primero le enseñamos las caras al programa y luego él las
 
 ```
 Proyecto OpenCV/
-├── proyecto_opencv_version_1.py        # Programa principal
 ├── haarcascades/
 │   └── haarcascade_frontalface_default.xml   # Detector de caras
-├── utils/                     # Datos de los jugadores en JSON
 ├── imagenes/
-│   ├── fotos_equipos/         # Fotos de registro
 │   ├── caras_proyecto/        # Primeros planos de los jugadores de pruebas
-│   └── caras/          # Caras que guarda el programa al registrar (se rellena sola)
-└── videos/                    # Vídeos de prueba (barcelona.mp4, partido.mp4...)
+│   ├── fotos_equipos/         # Fotos de registro
+│   └── caras/          # Caras que guarda el programa al registrar (se crea sola)
+├── utils/                     # Datos de los jugadores en JSON
+├── videos/                    # Vídeos de prueba (barcelona.mp4, partido.mp4...)
+└── proyecto_opencv_version_1.py        # Programa principal
 ```
 
 ## ⚙️ Requisitos e instalación
