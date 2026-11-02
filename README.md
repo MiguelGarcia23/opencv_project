@@ -1,6 +1,6 @@
 # ⚽ Tarjetas de jugadores en vídeo con OpenCV
 
-Proyecto de la asignatura **Imagen Digital** (Grado en Ingeniería del Software, Universidad de Extremadura).
+Proyecto de la asignatura **Imagen Digital** (Grado en Ingeniería Informática en Ingeniería del Software, Universidad de Extremadura).
 
 ## ¿Por qué este proyecto?
 
@@ -21,7 +21,7 @@ En pocas palabras: **primero le enseñamos las caras al programa y luego él las
 
 ```
 Proyecto OpenCV/
-├── PROYECTO_POTENTE.py        # Programa principal
+├── proyecto_opencv_version_1.py        # Programa principal
 ├── haarcascades/
 │   └── haarcascade_frontalface_default.xml   # Detector de caras
 ├── utils/
@@ -55,7 +55,7 @@ Debe salir un número que empiece por `4`.
 1. Abre una terminal **dentro de la carpeta del proyecto** (las rutas son relativas a ella).
 2. Ejecuta:
    ```bash
-   python PROYECTO_POTENTE.py
+   python proyecto_opencv_version_1.py
    ```
 3. Registra a los jugadores escribiendo su dorsal en la consola.
 4. Mira el vídeo con las tarjetas. Pulsa `q` para cerrar.
@@ -66,11 +66,12 @@ El archivo `utils/barcelona.json` guarda la información que aparece en la tarje
 
 ```json
 {
-  "3": {
-    "nombre": "Alejandro Balde",
-    "posicion": "Defensa",
-    "nacionalidad": "España",
-    "edad": 23
+  "11": {
+    "nombre": "Raphinha",
+    "posicion": "Delantero",
+    "nacionalidad": "Brasil",
+    "edad": 29,
+    "nota": "Capitán"
   }
 }
 ```
