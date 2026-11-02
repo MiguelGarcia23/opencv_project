@@ -15,28 +15,34 @@ except FileNotFoundError:
     datos_equipo = {}
 
 # Transformamos el diccionario para poder buscar directamente por el nombre
-buscador_jugadores = {}
+jugadores = {}
 for dorsal, info in datos_equipo.items():
-    info_completa = info.copy()
-    info_completa["dorsal"] = dorsal
-    buscador_jugadores[info["nombre"].lower()] = info_completa
+    info_jugador = info.copy()
+    info_jugador["dorsal"] = dorsal
+    jugadores[info["nombre"].lower()] = info_jugador
 
 # =================================================================================
 # CONFIGURACIÓN INICIAL
 # =================================================================================
-archivo_foto_equipo = './imagenes/caras/dorsales.webp'  # Foto del equipo
-carpeta_fotos = './imagenes/caras_prueba/'        # Carpeta donde se guardarán las caras de los jugadores
-archivo_video = './videos/barcelona.mp4'
+foto_equipo = './imagenes/caras/dorsales.webp'  # Foto del equipo
+carpeta_caras = './imagenes/caras_prueba/'        # Carpeta donde se guardarán las caras de los jugadores
+video_partido = './videos/barcelona.mp4'
 
 # Crear la carpeta si no existe
-if not os.path.exists(carpeta_fotos):
-    os.makedirs(carpeta_fotos)
+if not os.path.exists(carpeta_caras):
+    os.makedirs(carpeta_caras)
 
 clasificador = cv2.CascadeClassifier('./haarcascades/haarcascade_frontalface_default.xml')
+
+# Comprobamos que el detector de caras se ha cargado bien
+if clasificador.empty():
+    print("ERROR: no se pudo cargar el detector de caras (revisa la carpeta haarcascades).")
+    exit()
 
 color_marco = (0, 255, 0) # Marco verde
 grosor = 2
 fuente = cv2.FONT_HERSHEY_SIMPLEX
+UMBRAL = 0.3 # Diferencia máxima para aceptar un nombre (0 = idénticas). Si se supera, "Desconocido"
 
 nombres_plantilla = []
 caras_plantilla = []
@@ -45,11 +51,11 @@ caras_plantilla = []
 # FASE 1: Crear la base de datos de caras de manera interactiva
 # =================================================================================
 print("--- FASE 1: REGISTRO DE JUGADORES ---")
-img_equipo = cv2.imread(archivo_foto_equipo)
+img_equipo = cv2.imread(foto_equipo)
 
 if img_equipo is not None:
-    img_equipo_byn = cv2.cvtColor(img_equipo, cv2.COLOR_BGR2GRAY)
-    caras_en_foto = clasificador.detectMultiScale(img_equipo_byn, scaleFactor=1.1, minNeighbors=5)
+    img_escala_grises = cv2.cvtColor(img_equipo, cv2.COLOR_BGR2GRAY)
+    caras_en_foto = clasificador.detectMultiScale(img_escala_grises, scaleFactor=1.1, minNeighbors=5)
     
     print(f"Se han detectado {len(caras_en_foto)} caras en la foto de equipo.")
 
@@ -60,7 +66,7 @@ if img_equipo is not None:
         
         # 1. Recortamos la cara para mostrarla y guardarla
         cara_recortada_color = img_equipo[y:y+alto, x:x+ancho]
-        cara_recortada_byn = img_equipo_byn[y:y+alto, x:x+ancho]
+        cara_recortada_escala_grises = img_escala_grises[y:y+alto, x:x+ancho]
         
         # 2. Mostramos la cara ampliada en una ventana para que el usuario pueda verla y reconocer al jugador
         cara_ampliada = cv2.resize(cara_recortada_color, (200, 200))
@@ -71,21 +77,22 @@ if img_equipo is not None:
         while True:
             print("\n--- JUGADORES SIN IDENTIFICAR ---")
             # Imprimimos la lista actualizada
-            for dorsal_disp, nombre_disp in jugadores_disponibles.items():
-                print(f"{dorsal_disp}. {nombre_disp}")
+            for dorsal_disponible, nombre_disponible in jugadores_disponibles.items():
+                print(f"{dorsal_disponible}. {nombre_disponible}")
 
-            seleccion = input("\nEscribe el NÚMERO del jugador (o presiona ENTER para ignorar): ").strip()
+            jugador_seleccionado = input("\nEscribe el NÚMERO del jugador (o presiona ENTER para ignorar): ").strip()
                         
-            if seleccion == "":
+            if jugador_seleccionado == "":
                 print("Cara ignorada.")
                 break # Sale del bucle de validación y pasa a la siguiente cara
 
-            elif seleccion in jugadores_disponibles:
+            elif jugador_seleccionado in jugadores_disponibles:
                 # 3. Si acierta el número, sacamos el nombre exacto del JSON
-                nombre_exacto = jugadores_disponibles[seleccion]
+                nombre_exacto = jugadores_disponibles[jugador_seleccionado]
 
-                cara_estandar = cv2.resize(cara_recortada_byn, (100, 100))
-                ruta_guardado = os.path.join(carpeta_fotos, nombre_exacto + ".jpg")
+                cara_estandar = cv2.resize(cara_recortada_escala_grises, (100, 100))
+                cara_estandar = cv2.equalizeHist(cara_estandar) # Igualamos el contraste para que la luz influya menos
+                ruta_guardado = os.path.join(carpeta_caras, nombre_exacto + ".jpg")
                 cv2.imwrite(ruta_guardado, cara_estandar)
 
                 # La metemos directamente en las listas para usarlas ahora en el video
@@ -94,7 +101,7 @@ if img_equipo is not None:
                 print(f"--> ¡{nombre_exacto} guardado correctamente!")
 
                 # 4. Lo borramos de la lista de disponibles para que no vuelva a salir
-                del jugadores_disponibles[seleccion]
+                del jugadores_disponibles[jugador_seleccionado]
                 break # Sale del bucle de validación y pasa a la siguiente cara
             
 
@@ -113,7 +120,7 @@ print(f"Plantilla lista con {len(nombres_plantilla)} jugadores.")
 # FASE 2: PROCESAR EL VÍDEO (basado en reproduciendoVideo.py y escalado.py)
 # =================================================================================
 if len(nombres_plantilla) > 0:
-    video = cv2.VideoCapture(archivo_video)
+    video = cv2.VideoCapture(video_partido)
 
     if not video.isOpened():
         print("Error al abrir el video")
@@ -124,13 +131,13 @@ if len(nombres_plantilla) > 0:
         if not ret:
             break # Fin del video
             
-        frame_byn = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame_escala_grises = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         
         # Para evitar el lag en el video, se reduce la imagen para el detector
-        alto, ancho = frame_byn.shape
-        escala = 0.5
+        alto, ancho = frame_escala_grises.shape
+        escala = 1.0
         ancho_esc, alto_esc = int(ancho * escala), int(alto * escala)
-        frame_pequeno = cv2.resize(frame_byn, (ancho_esc, alto_esc))
+        frame_pequeno = cv2.resize(frame_escala_grises, (ancho_esc, alto_esc))
         
         caras_video = clasificador.detectMultiScale(frame_pequeno, scaleFactor=1.2, minNeighbors=5)
         
@@ -141,8 +148,9 @@ if len(nombres_plantilla) > 0:
             a_cara, h_cara = int(ancho_p / escala), int(alto_p / escala)
             
             # Recorte y estandarización
-            cara_vid_recortada = frame_byn[y:y+h_cara, x:x+a_cara]
+            cara_vid_recortada = frame_escala_grises[y:y+h_cara, x:x+a_cara]
             cara_vid_estandar = cv2.resize(cara_vid_recortada, (100, 100))
+            cara_vid_estandar = cv2.equalizeHist(cara_vid_estandar) # Mismo tratamiento que en el registro
             
             mejor_diferencia = 1.0 
             mejor_nombre = nombres_plantilla[0]
@@ -151,19 +159,26 @@ if len(nombres_plantilla) > 0:
                 patron = caras_plantilla[indice]
                 
                 # Comparación matemática
-                res = cv2.matchTemplate(cara_vid_estandar, patron, cv2.TM_SQDIFF_NORMED)
-                min_val, _, _, _ = cv2.minMaxLoc(res)
+                resultado = cv2.matchTemplate(cara_vid_estandar, patron, cv2.TM_SQDIFF_NORMED)
+                min_val, _, _, _ = cv2.minMaxLoc(resultado)
                 
                 if min_val < mejor_diferencia:
                     mejor_diferencia = min_val
                     mejor_nombre = nombres_plantilla[indice]
+
+            # Si la diferencia es demasiado grande, no se parece a nadie
+            if mejor_diferencia > UMBRAL:
+                mejor_nombre = "Desconocido"
+
+            # Mostramos la diferencia debajo de la cara (amarillo) para ajustar el UMBRAL
+            cv2.putText(frame, f"{mejor_diferencia:.2f}", (x, y + h_cara + 25), fuente, 0.8, (0, 255, 255), 2)
 
             # =================================================================================
             # TARJETA DE ESTADÍSTICAS
             # =================================================================================
             cv2.rectangle(frame, (x, y), (x+a_cara, y+h_cara), color_marco, grosor)
 
-            datos = buscador_jugadores.get(mejor_nombre.lower())
+            datos = jugadores.get(mejor_nombre.lower())
 
             if datos:
                 # Coordenada derecha de la cara para pegar ahí la tarjeta
@@ -171,6 +186,10 @@ if len(nombres_plantilla) > 0:
                 
                 ancho_tarjeta = 230
                 alto_tarjeta = 110 if "nota" not in datos else 130
+
+                # Si la tarjeta no cabe a la derecha, la ponemos a la izquierda de la cara
+                if lado_derecho + ancho_tarjeta > frame.shape[1]:
+                    lado_derecho = max(0, x - ancho_tarjeta)
                 
                 # Fondo gris y borde
                 cv2.rectangle(frame, (lado_derecho, y), (lado_derecho + ancho_tarjeta, y + alto_tarjeta), (40, 40, 40), cv2.FILLED)
@@ -184,7 +203,7 @@ if len(nombres_plantilla) > 0:
                     f"Edad: {datos['edad']} anos"
                 ]
                 if "nota" in datos:
-                    lineas_texto.append(f"*** {datos['nota']} ***")
+                    lineas_texto.append(f"{datos['nota']} ©")
                     
                 # Escribimos las líneas
                 y_texto = y + 25
