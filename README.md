@@ -23,15 +23,14 @@ La diferencia es **cómo se reconoce a cada jugador**: la versión 1 usa solo lo
 ## ⚙️ Instalación
 
 ```bash
-pip install "opencv-python<5" face_recognition
+pip3 install numpy pandas matplotlib scikit-learn opencv-python
 pip install "setuptools<70.0.0" --force-reinstall
 pip install --force-reinstall face_recognition face-recognition-models cmake dlib
 ```
 
 | Nota | Detalle |
 |---|---|
-| `opencv-python<5` | Los códigos de clase están hechos para OpenCV 4 |
-| `dlib` en Windows | `face_recognition` depende de `dlib`; puede necesitar las herramientas de C++ de Visual Studio |
+| `dlib` en Windows | `face_recognition` depende de `dlib`. Suele necesitar las herramientas de C++ de Visual Studio |
 | `setuptools<70` | Evita un error de compatibilidad al cargar los modelos de `face_recognition` |
 
 ## ▶️ Ejecución
@@ -40,7 +39,7 @@ pip install --force-reinstall face_recognition face-recognition-models cmake dli
 python proyecto_opencv_version_2.py
 ```
 
-1. Aparece cada cara de la foto de registro y se escribe por consola el **dorsal** del jugador (ENTER para ignorar).
+1. Aparece cada cara de la foto de registro del equipo y se escribe por consola el **dorsal** del jugador (ENTER para ignorar).
 2. Se reproduce el vídeo con el recuadro y la tarjeta de cada jugador reconocido.
 3. La **barra "Tiempo"** permite avanzar o retroceder en el vídeo. Tecla **`q`** para salir.
 
@@ -60,7 +59,7 @@ python proyecto_opencv_version_2.py
 
 ---
 
-## 🛠️ Cambios realizados (explicados por encima)
+## 🛠️ Cambios realizados
 
 ### 1. Reconocimiento con red neuronal
 En lugar de comparar píxel a píxel (que falla en cuanto cambia la luz o el ángulo), la librería convierte cada cara en **128 números** que describen sus rasgos (distancia entre ojos, forma de la nariz, mandíbula…). Dos caras de la misma persona dan números muy parecidos aunque la foto sea distinta.
@@ -74,26 +73,20 @@ En lugar de comparar píxel a píxel (que falla en cuanto cambia la luz o el án
 
 Si la distancia más pequeña es **menor de 0.6**, se acepta el nombre; si no, se marca como **"Desconocido"** en rojo.
 
-### 2. Registro guiado con el JSON
-Al registrar se muestra la lista de jugadores del `barcelona.json` y se escribe el **dorsal**. El programa valida la entrada y quita de la lista a los ya asignados, para no repetir.
-
-### 3. Barra de tiempo
+### 2. Barra de tiempo
 Con `cv2.createTrackbar` se añade una barra para moverse por el vídeo, útil en la demo para ir directamente a las jugadas que interesan.
 
-### 4. Optimización de velocidad
+### 3. Optimización de velocidad
 La IA es mucho más pesada que Haar, así que el vídeo iba muy lento. Cambios aplicados:
 
 | Cambio | Qué soluciona |
 |---|---|
 | **Barra que no "salta" sola** | Al actualizar la barra, OpenCV volvía a colocar el vídeo en cada fotograma, lo que era muy lento. Ahora solo salta cuando el usuario la mueve con el ratón |
-| **La IA analiza 1 de cada 3 fotogramas** (`CADA_N_FRAMES`) | En los fotogramas intermedios se reutilizan los últimos recuadros |
-| **Imagen reducida a 480 px de ancho** (`ANCHO_IA`) | La IA trabaja con una imagen pequeña, sea cual sea la resolución del vídeo |
-| **La barra se actualiza cada 10 fotogramas** (`CADA_N_BARRA`) | Menos trabajo de dibujo |
+| **La IA analiza 1 de cada 3 fotogramas** (`NUMERO_FRAMES_ANALIZADOS_JUNTOS`) | En los fotogramas intermedios se reutilizan los últimos recuadros |
+| **Imagen reducida a 480px de ancho** (`ANCHO_DE_LA_IMAGEN_PROCESADA`) | La IA trabaja con una imagen pequeña, sea cual sea la resolución del vídeo |
+| **La barra se actualiza cada 10 fotogramas** (`NUMERO_FRAMES_ANALIZADOS_BARRA`) | Menos trabajo de dibujo al mover la barra |
 
-Estos tres valores están al principio del código para ajustarlos según el ordenador.
-
-### 5. Tarjeta de información
-Junto a cada jugador reconocido se dibuja una tarjeta con dorsal, nombre, posición, nacionalidad, edad y nota, leídos del JSON.
+Estos tres valores son constantes que están al principio del código para ajustarlos según el ordenador.
 
 ---
 
@@ -118,14 +111,13 @@ Junto a cada jugador reconocido se dibuja una tarjeta con dorsal, nombre, posici
 
 | Limitación | Por qué |
 |---|---|
-| Sigue habiendo algo de lag | `face_recognition` calcula con el procesador; con una tarjeta gráfica NVIDIA iría fluido, pero requiere compilar `dlib` con CUDA |
-| Planos abiertos | Si la cara ocupa muy pocos píxeles, no se detecta |
-| Tildes y ñ salen como `??` | `cv2.putText` no admite esos caracteres |
-| Usa librerías externas | Por eso la versión 1 (solo OpenCV) sigue siendo la versión principal |
+| **Sigue habiendo algo de lag** | `face_recognition` calcula con el procesador; con una tarjeta gráfica NVIDIA iría fluido, pero requiere compilar `dlib` con NVIDIA CUDA |
+| **Planos abiertos** | Si la cara ocupa muy pocos píxeles, no se detecta |
+| **Usa librerías externas** | Por eso la versión 1 (sólo OpenCV) sigue siendo la versión principal |
 
 ---
 
 ## 👥 Autores
 
-- David Muñoz Torrero Pérez
-- Miguel Alejandro García Sevilla
+- **David Muñoz Torrero Pérez**
+- **Miguel Alejandro García Sevilla**

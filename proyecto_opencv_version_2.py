@@ -38,10 +38,10 @@ color_marco = (0, 255, 0)   # Marco verde
 grosor = 2
 fuente = cv2.FONT_HERSHEY_SIMPLEX
 
-# --- AJUSTES DE VELOCIDAD ---
-ANCHO_IA = 480          # Ancho (en píxeles) de la imagen que analiza la IA. Menos = más rápido
-CADA_N_FRAMES = 3       # La IA analiza 1 de cada N fotogramas. Más = más rápido
-CADA_N_BARRA = 10       # La barra de tiempo se actualiza 1 de cada N fotogramas
+# --- AJUSTES DE VELOCIDAD NECESARIOS PARA QUE EL VIDEO SE VEA MÁS FLUIDO ---
+ANCHO_DE_LA_IMAGEN_PROCESADA = 480          # Ancho en píxeles de la imagen del jugador que analiza la IA. (Menos = más rápido)
+NUMERO_FRAMES_ANALIZADOS_JUNTOS = 3         # La IA analiza 1 de cada N fotogramas. (Más = más rápido)
+NUMERO_FRAMES_ANALIZADOS_BARRA = 10         # La barra de tiempo se actualiza 1 de cada N fotogramas
 NOMBRE_VENTANA = 'Reconocimiento de jugadores - Version final'
 
 # =================================================================================
@@ -51,15 +51,15 @@ print("--- FASE 1: REGISTRO DE JUGADORES ---")
 img_equipo = cv2.imread(foto_equipo)
 
 if img_equipo is not None:
-    # Usa RGB, en lugar de BGR
+    # Usa RGB, en lugar de BGR como lo suele hacer OpenCV
     img_equipo_rgb = cv2.cvtColor(img_equipo, cv2.COLOR_BGR2RGB)
 
-    # Detecta caras usando el modelo HOG de la IA (mucho más preciso que HaarCascade)
+    # Detecta caras de jugadores usando el modelo HOG (Histograma de Gradientes Orientados) de la IA
     caras_en_foto = face_recognition.face_locations(img_equipo_rgb)
 
     print(f"Se han detectado {len(caras_en_foto)} caras.")
 
-    # 1. Creamos un diccionario temporal con los jugadores que faltan por asignar
+    # Creamos un diccionario temporal con los jugadores que faltan por asignar
     jugadores_disponibles = {dorsal: info["nombre"] for dorsal, info in datos_equipo.items()}
 
     for (top, right, bottom, left) in caras_en_foto:
@@ -69,7 +69,7 @@ if img_equipo is not None:
         cv2.imshow('Registro - Quien es?', cara_ampliada)
         cv2.waitKey(1)
 
-        # 2. Bucle de validación: se repite hasta que el usuario meta una opción correcta
+        # Bucle de validación para identificar jugadores. Se repite hasta que el usuario seleccione una opción correcta
         while True:
             print("\n--- JUGADORES SIN IDENTIFICAR ---")
             # Imprimimos la lista actualizada
@@ -83,14 +83,14 @@ if img_equipo is not None:
                 break  # Sale del bucle de validación y pasa a la siguiente cara
 
             elif jugador_seleccionado in jugadores_disponibles:
-                # 3. Si acierta el número, sacamos el nombre exacto del JSON
+                # Si ingresa un número válido, sacamos el nombre exacto del JSON y se guarda la foto en la carpeta de caras
                 nombre_exacto = jugadores_disponibles[jugador_seleccionado]
 
                 ruta_guardado = os.path.join(carpeta_caras, nombre_exacto + ".jpg")
                 cv2.imwrite(ruta_guardado, cara_recortada)
                 print(f"--> ¡{nombre_exacto} registrado con éxito!")
 
-                # 4. Lo borramos de la lista de disponibles para que no vuelva a salir
+                # Borramos al jugador seleccionado de la lista de disponibles para que no vuelva a salir
                 del jugadores_disponibles[jugador_seleccionado]
                 break  # Sale del bucle de validación y pasa a la siguiente cara
 
@@ -107,21 +107,21 @@ else:
 # =================================================================================
 print("\nCodificando el ADN facial de los jugadores...")
 nombres_conocidos = []
-codificaciones_conocidas = []
+rasgos_conocidos = []
 
-# La IA lee las fotos guardadas y extrae los 128 puntos geométricos (encodings)
+# La IA lee las fotos guardadas y extrae los 128 puntos geométricos (rasgos de la cara)
 for archivo in os.listdir(carpeta_caras):
     if archivo.lower().endswith(('.png', '.jpg', '.jpeg')):
         ruta = os.path.join(carpeta_caras, archivo)
         nombre = archivo.rsplit(".", 1)[0]
 
-        # Cargar imagen y extraer sus 128 mediciones
+        # Cargar imagen y extraer sus 128 mediciones (rasgos) de la cara
         img_jugador = face_recognition.load_image_file(ruta)
 
-        # A veces la foto no se recorta perfecta, comprobamos si encuentra la cara
-        encodings = face_recognition.face_encodings(img_jugador)
-        if len(encodings) > 0:
-            codificaciones_conocidas.append(encodings[0])
+        # A veces la foto de la cara del jugador no se recorta perfecta, comprobamos si encuentra la cara
+        rasgos = face_recognition.face_encodings(img_jugador)
+        if len(rasgos) > 0:
+            rasgos_conocidos.append(rasgos[0])
             nombres_conocidos.append(nombre)
 
 print(f"Plantilla lista con {len(nombres_conocidos)} jugadores.")
@@ -152,9 +152,9 @@ if len(nombres_conocidos) > 0:
     nombres_caras = []
 
     # 3. Función que se dispara cuando se mueve la barra
-    def saltar_a_fotograma(valor):
+    def mover_barra_de_tiempo(valor):
         global contador_frames, posiciones_caras, nombres_caras
-        # Si la ha movido el propio programa, NO saltamos
+        # Si la ha movido el propio programa, no hacemos el salto
         if barra_movida_por_programa:
             return
         # Si la ha movido el usuario con el ratón, saltamos a ese punto del vídeo
@@ -164,50 +164,56 @@ if len(nombres_conocidos) > 0:
         contador_frames = 0
 
     # 4. Creamos la barra de desplazamiento pegada a nuestra ventana
-    cv2.createTrackbar('Tiempo', NOMBRE_VENTANA, 0, max(total_frames - 1, 1), saltar_a_fotograma)
+    cv2.createTrackbar('Tiempo', NOMBRE_VENTANA, 0, max(total_frames - 1, 1), mover_barra_de_tiempo)
     # --------------------------------------------
 
-    escala = None  # Se calcula con el primer fotograma
+    # La escala de las imágenes se calcula con el primer fotograma para que trabaje en función de la constante ANCHO_DE_LA_IMAGEN_PROCESADA
+    escala = None
 
     while True:
         ret, frame = video.read()
         if not ret:
             break
 
-        # Escala automática para que la IA siempre trabaje con una imagen de ANCHO_IA píxeles
+        # DEFINIR ESCALA DE LA IMAGEN
+        # Escala automática para que la IA siempre trabaje con una imagen de los píxeles indicados por la constante ANCHO_DE_LA_IMAGEN_PROCESADA
         if escala is None:
-            escala = min(1.0, ANCHO_IA / frame.shape[1])
+            escala = min(1.0, ANCHO_DE_LA_IMAGEN_PROCESADA / frame.shape[1])
 
-        # La barra va avanzando (solo cada CADA_N_BARRA fotogramas)
-        if contador_frames % CADA_N_BARRA == 0:
+        # AVANZA LA BARRA DE TIEMPO CADA N FRAMES
+        # La barra va avanzando pero no siempre sino cada número de fotogramas que vaya mostrando indicados por la constante NUMERO_FRAMES_ANALIZADOS_BARRA
+        if contador_frames % NUMERO_FRAMES_ANALIZADOS_BARRA == 0:
             frame_actual = int(video.get(cv2.CAP_PROP_POS_FRAMES))
             barra_movida_por_programa = True
             cv2.setTrackbarPos('Tiempo', NOMBRE_VENTANA, frame_actual)
             barra_movida_por_programa = False
 
-        # Solo hacemos el cálculo pesado 1 de cada CADA_N_FRAMES fotogramas
-        if contador_frames % CADA_N_FRAMES == 0:
+        # CALCULO PARA RECONOCER AL JUGADOR CADA N FRAMES
+        # Solo hacemos el cálculo pesado de comprobar todo el frame uno de cada N fotogramas indicados por la constante NUMERO_FRAMES_ANALIZADOS_JUNTOS
+        if contador_frames % NUMERO_FRAMES_ANALIZADOS_JUNTOS == 0:
             # Reducimos la imagen para que la IA vaya más rápida
             frame_pequeno = cv2.resize(frame, (0, 0), fx=escala, fy=escala)
             frame_rgb_pequeno = cv2.cvtColor(frame_pequeno, cv2.COLOR_BGR2RGB)
 
             posiciones_caras = face_recognition.face_locations(frame_rgb_pequeno)
-            codificaciones_caras = face_recognition.face_encodings(frame_rgb_pequeno, posiciones_caras)
+            rasgos_caras = face_recognition.face_encodings(frame_rgb_pequeno, posiciones_caras)
 
-            # Vaciamos la lista para actualizarla
+            # Vaciamos la lista de nombres de los jugadores con coincidencia para actualizarla
             nombres_caras = []
 
-            for codificacion in codificaciones_caras:
-                distancias = face_recognition.face_distance(codificaciones_conocidas, codificacion)
-                mejor_nombre = "Desconocido"
+            # Calcula matemáticamente la distancia o similitud entre los rasgos de la cara detectada y los rasgos de las caras conocidas 
+            for rasgo in rasgos_caras:
+                distancias = face_recognition.face_distance(rasgos_conocidos, rasgo)
+                nombre_de_mejor_coincidencia = "Desconocido"
 
+                # Si hay coincidencias, buscamos la mejor con un umbral de 0.6 (menos = más parecido)
                 if len(distancias) > 0:
-                    indice_ganador = np.argmin(distancias)
-                    # Si la distancia es menor a 0.6, es él.
-                    if distancias[indice_ganador] < 0.6:
-                        mejor_nombre = nombres_conocidos[indice_ganador]
+                    mejor_indice_de_coincidencia = np.argmin(distancias)
 
-                nombres_caras.append(mejor_nombre)
+                    if distancias[mejor_indice_de_coincidencia] < 0.6:
+                        nombre_de_mejor_coincidencia = nombres_conocidos[mejor_indice_de_coincidencia]
+
+                nombres_caras.append(nombre_de_mejor_coincidencia)
 
         contador_frames += 1
 
@@ -216,7 +222,7 @@ if len(nombres_conocidos) > 0:
         # =================================================================================
         for (top, right, bottom, left), nombre in zip(posiciones_caras, nombres_caras):
 
-            # Devolvemos las coordenadas al tamaño original
+            # Devolvemos las coordenadas de la cara del jugador al tamaño original
             top = int(top / escala)
             right = int(right / escala)
             bottom = int(bottom / escala)
@@ -224,11 +230,11 @@ if len(nombres_conocidos) > 0:
 
             color = (0, 255, 0) if nombre != "Desconocido" else (0, 0, 255)
 
-            # Dibujamos el marco de la cara siempre
+            # Dibujamos el marco de la cara siempre que reconozca una cara
             cv2.rectangle(frame, (left, top), (right, bottom), color, grosor)
 
             if nombre != "Desconocido":
-                # 1. Buscamos al jugador en nuestra base de datos (ignorando mayúsculas/minúsculas)
+                # 1. Buscamos al jugador en nuestra base de datos
                 datos = jugadores.get(nombre.lower())
 
                 if datos:
@@ -241,7 +247,7 @@ if len(nombres_conocidos) > 0:
                     # Borde verde para la tarjeta
                     cv2.rectangle(frame, (right, top), (right + ancho_tarjeta, top + alto_tarjeta), color, 1)
 
-                    # 3. Preparamos los textos que van dentro
+                    # 3. Formato de la información del jugador
                     lineas_texto = [
                         f"#{datos['dorsal']} {datos['nombre']}",
                         f"Posición: {datos['posicion']}",
@@ -251,7 +257,7 @@ if len(nombres_conocidos) > 0:
                     if "nota" in datos:
                         lineas_texto.append(f"*** {datos['nota']} ***")
 
-                    # 4. Escribimos cada línea
+                    # 4. Escribimos cada línea de información en la tarjeta
                     y_texto = top + 25
                     for linea in lineas_texto:
                         cv2.putText(frame, linea, (right + 10, y_texto), fuente, 0.5, (255, 255, 255), 1)
@@ -260,7 +266,7 @@ if len(nombres_conocidos) > 0:
                     # Si el nombre detectado no está en el JSON, solo ponemos el nombre
                     cv2.putText(frame, nombre, (left, top - 10), fuente, 0.75, color, grosor)
             else:
-                # Si es un desconocido, recuadro rojo clásico
+                # Si es un desconocido, recuadro rojo clásico con el texto "Desconocido"
                 cv2.putText(frame, "Desconocido", (left, top - 10), fuente, 0.75, color, grosor)
 
         cv2.imshow(NOMBRE_VENTANA, frame)
