@@ -17,27 +17,28 @@ except FileNotFoundError:
     datos_equipo = {}
 
 # Transformamos el diccionario para poder buscar directamente por el nombre
-buscador_jugadores = {}
+jugadores = {}
 for dorsal, info in datos_equipo.items():
-    info_completa = info.copy()
-    info_completa["dorsal"] = dorsal
-    buscador_jugadores[info["nombre"].lower()] = info_completa
+    info_jugador = info.copy()
+    info_jugador["dorsal"] = dorsal
+    jugadores[info["nombre"].lower()] = info_jugador
 
 # =================================================================================
 # CONFIGURACIÓN INICIAL
 # =================================================================================
-archivo_foto_equipo = './imagenes/caras/dorsales.webp'
-carpeta_fotos = './imagenes/caras_prueba/'
-archivo_video = './videos/barcelona.mp4'
+foto_equipo = './imagenes/caras/dorsales.webp'
+carpeta_caras = './imagenes/caras_prueba/'
+video_partido = './videos/barcelona.mp4'
 
-if not os.path.exists(carpeta_fotos):
-    os.makedirs(carpeta_fotos)
+# Crear la carpeta si no existe
+if not os.path.exists(carpeta_caras):
+    os.makedirs(carpeta_caras)
 
-color_marco = (0, 255, 0)
+color_marco = (0, 255, 0)   # Marco verde
 grosor = 2
 fuente = cv2.FONT_HERSHEY_SIMPLEX
 
-# --- AJUSTES DE VELOCIDAD (NUEVO) ---
+# --- AJUSTES DE VELOCIDAD ---
 ANCHO_IA = 480          # Ancho (en píxeles) de la imagen que analiza la IA. Menos = más rápido
 CADA_N_FRAMES = 3       # La IA analiza 1 de cada N fotogramas. Más = más rápido
 CADA_N_BARRA = 10       # La barra de tiempo se actualiza 1 de cada N fotogramas
@@ -47,7 +48,7 @@ NOMBRE_VENTANA = 'Reconocimiento de jugadores - Version final'
 # FASE 1: IDENTIFICACIÓN DE JUGADORES
 # =================================================================================
 print("--- FASE 1: REGISTRO DE JUGADORES ---")
-img_equipo = cv2.imread(archivo_foto_equipo)
+img_equipo = cv2.imread(foto_equipo)
 
 if img_equipo is not None:
     # Usa RGB, en lugar de BGR
@@ -72,25 +73,25 @@ if img_equipo is not None:
         while True:
             print("\n--- JUGADORES SIN IDENTIFICAR ---")
             # Imprimimos la lista actualizada
-            for dorsal_disp, nombre_disp in jugadores_disponibles.items():
-                print(f"{dorsal_disp}. {nombre_disp}")
+            for dorsal_disponible, nombre_disponible in jugadores_disponibles.items():
+                print(f"{dorsal_disponible}. {nombre_disponible}")
 
-            seleccion = input("\nEscribe el NÚMERO del jugador (o presiona ENTER para ignorar): ").strip()
+            jugador_seleccionado = input("\nEscribe el NÚMERO del jugador (o presiona ENTER para ignorar): ").strip()
 
-            if seleccion == "":
+            if jugador_seleccionado == "":
                 print("Cara ignorada.")
                 break  # Sale del bucle de validación y pasa a la siguiente cara
 
-            elif seleccion in jugadores_disponibles:
+            elif jugador_seleccionado in jugadores_disponibles:
                 # 3. Si acierta el número, sacamos el nombre exacto del JSON
-                nombre_exacto = jugadores_disponibles[seleccion]
+                nombre_exacto = jugadores_disponibles[jugador_seleccionado]
 
-                ruta_guardado = os.path.join(carpeta_fotos, nombre_exacto + ".jpg")
+                ruta_guardado = os.path.join(carpeta_caras, nombre_exacto + ".jpg")
                 cv2.imwrite(ruta_guardado, cara_recortada)
                 print(f"--> ¡{nombre_exacto} registrado con éxito!")
 
                 # 4. Lo borramos de la lista de disponibles para que no vuelva a salir
-                del jugadores_disponibles[seleccion]
+                del jugadores_disponibles[jugador_seleccionado]
                 break  # Sale del bucle de validación y pasa a la siguiente cara
 
             else:
@@ -109,9 +110,9 @@ nombres_conocidos = []
 codificaciones_conocidas = []
 
 # La IA lee las fotos guardadas y extrae los 128 puntos geométricos (encodings)
-for archivo in os.listdir(carpeta_fotos):
+for archivo in os.listdir(carpeta_caras):
     if archivo.lower().endswith(('.png', '.jpg', '.jpeg')):
-        ruta = os.path.join(carpeta_fotos, archivo)
+        ruta = os.path.join(carpeta_caras, archivo)
         nombre = archivo.rsplit(".", 1)[0]
 
         # Cargar imagen y extraer sus 128 mediciones
@@ -129,7 +130,7 @@ print(f"Plantilla lista con {len(nombres_conocidos)} jugadores.")
 # FASE 2: RECONOCIMIENTO EN VÍDEO CON IA
 # =================================================================================
 if len(nombres_conocidos) > 0:
-    video = cv2.VideoCapture(archivo_video)
+    video = cv2.VideoCapture(video_partido)
 
     if not video.isOpened():
         print("Error al abrir el vídeo")
@@ -142,7 +143,7 @@ if len(nombres_conocidos) > 0:
     # 2. Es obligatorio crear la ventana antes de pegarle la barra
     cv2.namedWindow(NOMBRE_VENTANA)
 
-    # NUEVO: interruptor para saber si la barra la mueve el programa o el usuario
+    # Interruptor para saber si la barra la mueve el programa o el usuario
     barra_movida_por_programa = False
 
     # Variables usadas para mejorar el lag
@@ -153,7 +154,7 @@ if len(nombres_conocidos) > 0:
     # 3. Función que se dispara cuando se mueve la barra
     def saltar_a_fotograma(valor):
         global contador_frames, posiciones_caras, nombres_caras
-        # NUEVO: si la ha movido el propio programa, NO saltamos (antes saltaba en cada frame)
+        # Si la ha movido el propio programa, NO saltamos
         if barra_movida_por_programa:
             return
         # Si la ha movido el usuario con el ratón, saltamos a ese punto del vídeo
@@ -173,11 +174,11 @@ if len(nombres_conocidos) > 0:
         if not ret:
             break
 
-        # NUEVO: escala automática para que la IA siempre trabaje con una imagen de ANCHO_IA píxeles
+        # Escala automática para que la IA siempre trabaje con una imagen de ANCHO_IA píxeles
         if escala is None:
             escala = min(1.0, ANCHO_IA / frame.shape[1])
 
-        # --- Que la barra vaya avanzando (solo cada CADA_N_BARRA fotogramas) ---
+        # La barra va avanzando (solo cada CADA_N_BARRA fotogramas)
         if contador_frames % CADA_N_BARRA == 0:
             frame_actual = int(video.get(cv2.CAP_PROP_POS_FRAMES))
             barra_movida_por_programa = True
@@ -228,7 +229,7 @@ if len(nombres_conocidos) > 0:
 
             if nombre != "Desconocido":
                 # 1. Buscamos al jugador en nuestra base de datos (ignorando mayúsculas/minúsculas)
-                datos = buscador_jugadores.get(nombre.lower())
+                datos = jugadores.get(nombre.lower())
 
                 if datos:
                     # 2. Dibujamos el fondo oscuro de la tarjeta a la derecha de la cara

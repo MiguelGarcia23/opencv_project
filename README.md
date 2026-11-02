@@ -1,10 +1,10 @@
 # ⚽ Reconocimiento de jugadores — Versión 2 (con librerías)
 
-Segunda versión del proyecto de **Imagen Digital** (Ingeniería del Software, UEx).
+Segunda versión del proyecto de **Imagen Digital** (Ingeniería Informática en Ingeniería del Software, UEx).
 
 El objetivo es el mismo que en la versión 1: ayudar a los aficionados que no distinguen a los jugadores mostrando una **tarjeta de información** junto a cada jugador en el vídeo del partido.
 
-La diferencia es **cómo se reconoce a cada jugador**: la versión 1 usa solo lo visto en clase con OpenCV, y esta versión 2 usa además la librería **`face_recognition`** (basada en redes neuronales). La presentamos como **opción alternativa** porque los resultados son mucho mejores.
+La diferencia es **cómo se reconoce a cada jugador**: la versión 1 usa solo lo visto en clase con OpenCV y esta versión 2 usa además la librería **`face_recognition`** (basada en redes neuronales). La presentamos como **opción alternativa** porque los resultados son mucho mejores.
 
 ---
 
@@ -12,7 +12,7 @@ La diferencia es **cómo se reconoce a cada jugador**: la versión 1 usa solo lo
 
 | Archivo | Descripción |
 |---|---|
-| `Entrega_Poryecto_OpenCV_Versión2.py` | Programa completo de la versión 2 |
+| `proyecto_opencv_version_2.py` | Programa completo de la versión 2 |
 | `utils/barcelona.json` | Datos de los jugadores (nombre, posición, nacionalidad, edad, nota) |
 | `imagenes/caras/dorsales.webp` | Foto de registro de los jugadores |
 | `imagenes/caras_prueba/` | Caras que se guardan al registrar |
@@ -24,8 +24,8 @@ La diferencia es **cómo se reconoce a cada jugador**: la versión 1 usa solo lo
 
 ```bash
 pip install "opencv-python<5" face_recognition
-python -m pip install "setuptools<70.0.0" --force-reinstall
-python -m pip install --force-reinstall face_recognition face-recognition-models cmake dlib
+pip install "setuptools<70.0.0" --force-reinstall
+pip install --force-reinstall face_recognition face-recognition-models cmake dlib
 ```
 
 | Nota | Detalle |
@@ -37,7 +37,7 @@ python -m pip install --force-reinstall face_recognition face-recognition-models
 ## ▶️ Ejecución
 
 ```bash
-python Entrega_Poryecto_OpenCV_Versión2.py
+python proyecto_opencv_version_2.py
 ```
 
 1. Aparece cada cara de la foto de registro y se escribe por consola el **dorsal** del jugador (ENTER para ignorar).
@@ -77,7 +77,10 @@ Si la distancia más pequeña es **menor de 0.6**, se acepta el nombre; si no, s
 ### 2. Registro guiado con el JSON
 Al registrar se muestra la lista de jugadores del `barcelona.json` y se escribe el **dorsal**. El programa valida la entrada y quita de la lista a los ya asignados, para no repetir.
 
-### 3. Optimización de velocidad
+### 3. Barra de tiempo
+Con `cv2.createTrackbar` se añade una barra para moverse por el vídeo, útil en la demo para ir directamente a las jugadas que interesan.
+
+### 4. Optimización de velocidad
 La IA es mucho más pesada que Haar, así que el vídeo iba muy lento. Cambios aplicados:
 
 | Cambio | Qué soluciona |
@@ -88,9 +91,6 @@ La IA es mucho más pesada que Haar, así que el vídeo iba muy lento. Cambios a
 | **La barra se actualiza cada 10 fotogramas** (`CADA_N_BARRA`) | Menos trabajo de dibujo |
 
 Estos tres valores están al principio del código para ajustarlos según el ordenador.
-
-### 4. Barra de tiempo
-Con `cv2.createTrackbar` se añade una barra para moverse por el vídeo, útil en la demo para ir directamente a las jugadas que interesan.
 
 ### 5. Tarjeta de información
 Junto a cada jugador reconocido se dibuja una tarjeta con dorsal, nombre, posición, nacionalidad, edad y nota, leídos del JSON.
