@@ -1,12 +1,12 @@
-# ⚽ Tarjetas de jugadores en vídeo con OpenCV
+# ⚽ Reconocimiento de jugadores en vídeo - Versión 1 con OpenCV
 
 Proyecto de la asignatura **Imagen Digital** (Grado en Ingeniería Informática en Ingeniería del Software, Universidad de Extremadura).
 
-## ¿Por qué este proyecto?
+## ❓ ¿Por qué este proyecto?
 
 Desde la grada de un estadio no siempre es fácil saber quién es cada jugador: están lejos, se mueven rápido y muchos se parecen con la misma equipación. Este programa intenta ayudar a esos aficionados: **reconoce la cara del jugador en el vídeo y le pone al lado una tarjeta con sus datos** (dorsal, nombre, posición, nacionalidad y edad), como una "nube de información".
 
-## ¿Qué hace?
+## 🔍 ¿Qué hace?
 
 El programa trabaja en dos fases:
 
@@ -17,40 +17,31 @@ El programa trabaja en dos fases:
 
 En pocas palabras: **primero le enseñamos las caras al programa y luego él las busca en el vídeo.**
 
-## Estructura del proyecto
+## 📁 Estructura del proyecto
 
 ```
 Proyecto OpenCV/
 ├── proyecto_opencv_version_1.py        # Programa principal
 ├── haarcascades/
 │   └── haarcascade_frontalface_default.xml   # Detector de caras
-├── utils/
-│   └── barcelona.json         # Datos de los jugadores
+├── utils/                     # Datos de los jugadores en JSON
 ├── imagenes/
-│   ├── caras/                 # Fotos de registro (foto del equipo: dorsales.webp)
-│   ├── caras_proyecto/        # Primeros planos de los jugadores
-│   └── caras_prueba/          # Caras que guarda el programa al registrar (se rellena sola)
+│   ├── fotos_equipos/         # Fotos de registro
+│   ├── caras_proyecto/        # Primeros planos de los jugadores de pruebas
+│   └── caras/          # Caras que guarda el programa al registrar (se rellena sola)
 └── videos/                    # Vídeos de prueba (barcelona.mp4, partido.mp4...)
 ```
 
-## Requisitos e instalación
+## ⚙️ Requisitos e instalación
 
 - Python 3
-- OpenCV **versión 4** (en la versión 5 el detector de caras ya no viene en el paquete básico)
+- OpenCV
 
 ```bash
-pip install "opencv-python<5"
+pip install opencv-python
 ```
 
-Para comprobar que todo está bien:
-
-```bash
-python -c "import cv2; print(cv2.__version__)"
-```
-
-Debe salir un número que empiece por `4`.
-
-## Cómo ejecutarlo
+## ▶️ Ejecución
 
 1. Abre una terminal **dentro de la carpeta del proyecto** (las rutas son relativas a ella).
 2. Ejecuta:
@@ -60,9 +51,9 @@ Debe salir un número que empiece por `4`.
 3. Registra a los jugadores escribiendo su dorsal en la consola.
 4. Mira el vídeo con las tarjetas. Pulsa `q` para cerrar.
 
-## Datos de los jugadores (JSON)
+## 📊 Datos de los jugadores (JSON)
 
-El archivo `utils/barcelona.json` guarda la información que aparece en la tarjeta. La clave es el dorsal:
+Los archivos de la carpeta `utils` guardan la información de cada equipo que aparece en las tarjetas de los jugadores. La clave es el dorsal. Por ejemplo, un jugador del archivo `utils/barcelona.json` se registra en el JSON así:
 
 ```json
 {
@@ -75,10 +66,9 @@ El archivo `utils/barcelona.json` guarda la información que aparece en la tarje
   }
 }
 ```
+Como se ve, se puede añadir un campo opcional `"nota"`, que aparece como una línea extra destacada en la tarjeta.
 
-Se puede añadir un campo opcional `"nota"`, que aparece como una línea extra destacada en la tarjeta.
-
-## Funciones de OpenCV que usamos
+## 🧰 Funciones de OpenCV usadas
 
 | Función | Para qué la usamos | Explicado fácil |
 |---|---|---|
@@ -96,19 +86,19 @@ Se puede añadir un campo opcional `"nota"`, que aparece como una línea extra d
 | `cv2.rectangle` | Marco de la cara y fondo de la tarjeta | Dibuja rectángulos (rellenos o solo borde) |
 | `cv2.putText` | Escribir los datos y el valor de parecido | Escribe texto sobre la imagen |
 
-## Ajustes que puedes tocar
+## ⚙️ Ajustes que puedes tocar
 
 | Variable | Valor | Qué controla |
 |---|---|---|
 | `archivo_video` | `./videos/barcelona.mp4` | Vídeo que se analiza |
-| `archivo_foto_equipo` | `./imagenes/caras/dorsales.webp` | Foto de la que se sacan las caras para el registro |
+| `archivo_foto_equipo` | `./imagenes/fotos_equipos/dorsales.webp` | Foto de la que se sacan las caras para el registro |
 | `UMBRAL` | `0.3` | Diferencia máxima para aceptar un nombre. Si se supera, sale "Desconocido" |
 | `escala` | `0.5` | Cuánto se reduce el vídeo antes de buscar caras (más pequeño = más rápido, pero pierde caras pequeñas) |
 | `minNeighbors` | `5` | Lo exigente que es el detector (más alto = menos caras falsas) |
 
 **Truco para ajustar el `UMBRAL`:** debajo de cada cara aparece un número amarillo, que es la diferencia con la plantilla más parecida. Fíjate en los valores cuando acierta y pon el umbral un poco por encima.
 
-## Ejemplos del profesor en los que nos basamos
+## 📖 Ejemplos usados como guía
 
 | Ejemplo | Qué hemos aprovechado |
 |---|---|
@@ -118,21 +108,19 @@ Se puede añadir un campo opcional `"nota"`, que aparece como una línea extra d
 | `escalado.py` | Reducir la imagen con `resize` |
 | `histograma_gris.py` | Trabajar el histograma de grises (base de `equalizeHist`) |
 
-## Qué no ha funcionado y por qué
+## ⚠️ Limitaciones
 
 Somos sinceros: el reconocimiento **no acierta siempre**. Estas son las causas:
 
-| Problema | Por qué pasa |
+| Limitación | ¿Por qué? |
 |---|---|
 | **Confunde jugadores** | `matchTemplate` no sabe qué es un ojo o una nariz: solo compara píxeles claros y oscuros. Dos caras con iluminación parecida pueden "parecerse" más que la misma persona con otra luz. El `equalizeHist` lo mejora, pero no lo elimina |
 | **No detecta caras en planos abiertos** | En un plano general la cara ocupa muy pocos píxeles y el detector no la encuentra |
 | **No detecta caras de perfil** | El detector Haar que usamos solo está entrenado con caras de frente |
-| **Tildes y ñ salen como `??`** | `cv2.putText` no admite esos caracteres (por eso escribimos "anos") |
-| **Algunas caras no se guardan** | En Windows, `cv2.imwrite` falla con nombres de archivo con tilde |
 
-Los sistemas de reconocimiento facial actuales resuelven esto con redes neuronales, que en lugar de comparar píxeles aprenden los rasgos de cada cara. Eso queda fuera de la visión por computador clásica que trabajamos en la asignatura, pero sería el siguiente paso natural.
+Los sistemas de reconocimiento facial actuales resuelven esto con **redes neuronales**, que en lugar de comparar píxeles aprenden los rasgos de cada cara. Eso queda fuera de la visión por computador clásica que trabajamos en la asignatura, pero sería el siguiente paso natural.
 
-## Autores
+## 👥 Autores
 
-- David Muñoz Torrero Pérez
-- Miguel Alejandro García Sevilla
+- **David Muñoz Torrero Pérez**
+- **Miguel Alejandro García Sevilla**

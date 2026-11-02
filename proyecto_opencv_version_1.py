@@ -24,8 +24,8 @@ for dorsal, info in datos_equipo.items():
 # =================================================================================
 # CONFIGURACIÓN INICIAL
 # =================================================================================
-foto_equipo = './imagenes/caras/dorsales.webp'  # Foto del equipo
-carpeta_caras = './imagenes/caras_prueba/'        # Carpeta donde se guardarán las caras de los jugadores
+foto_equipo = './imagenes/fotos_equipos/dorsales.webp'  # Foto del equipo
+carpeta_caras = './imagenes/caras/'        # Carpeta donde se guardarán las caras de los jugadores
 video_partido = './videos/barcelona.mp4'
 
 # Crear la carpeta si no existe
